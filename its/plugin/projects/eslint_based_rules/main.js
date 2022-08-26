@@ -3,3 +3,8 @@ if (cond) {
 } else {
   foo();
 }
+
+
+function f() {
+  return Math.random() > 0.5 ? 'a' : 42;
+}

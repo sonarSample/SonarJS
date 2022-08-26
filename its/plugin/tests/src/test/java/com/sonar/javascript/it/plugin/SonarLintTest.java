@@ -99,6 +99,26 @@ class SonarLintTest {
   }
 
   @Test
+  void test_s3800() throws Exception {
+    var inputFile1 = TestUtils.prepareInputFile(baseDir, "foo.js", "export function f() { return Math.random() > 0.5 ? 4 : 'a'}");
+    var inputFile2 = TestUtils.prepareInputFile(baseDir, "bar.js", "" +
+      "const foo = require('./foo'); \n" +
+      "function b() { \n" +
+      " return Math.random() > 0.5 ? foo.f() : 'a'; \n" +
+      "}\n");
+
+    var issues = new ArrayList<Issue>();
+    var configuration = StandaloneAnalysisConfiguration.builder()
+      .setBaseDir(baseDir.toPath())
+      .addInputFiles(inputFile2)
+      .build();
+    sonarlintEngine.analyze(configuration, issues::add, null, null);
+
+    issues.forEach(i -> System.out.println(i.getRuleKey()));
+    assertThat(issues).extracting(Issue::getRuleKey).containsExactly("javascript:S3800");
+  }
+
+  @Test
   void should_start_node_server_once() throws Exception {
     analyze(FILE_PATH, "");
     assertThat(LOGS).doesNotContain("eslint-bridge server is up, no need to start.");

@@ -20,6 +20,7 @@
 package org.sonar.plugins.javascript.eslint;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,14 +48,21 @@ public class JavaScriptEslintBasedSensor extends AbstractEslintSensor {
   private final TempFolder tempFolder;
   private final JavaScriptChecks checks;
   private final AnalysisProcessor processAnalysis;
+  private final ProjectScope projectScope;
 
   public JavaScriptEslintBasedSensor(JavaScriptChecks checks, EslintBridgeServer eslintBridgeServer,
                                      AnalysisWarningsWrapper analysisWarnings, TempFolder folder, Monitoring monitoring,
                                      AnalysisProcessor processAnalysis) {
+    this(checks, eslintBridgeServer, analysisWarnings, folder, monitoring, processAnalysis, null);
+  }
+  public JavaScriptEslintBasedSensor(JavaScriptChecks checks, EslintBridgeServer eslintBridgeServer,
+                                     AnalysisWarningsWrapper analysisWarnings, TempFolder folder, Monitoring monitoring,
+                                     AnalysisProcessor processAnalysis, ProjectScope projectScope) {
     super(eslintBridgeServer, analysisWarnings, monitoring);
     this.tempFolder = folder;
     this.checks = checks;
     this.processAnalysis = processAnalysis;
+    this.projectScope = projectScope;
   }
 
   @Override
@@ -68,14 +76,19 @@ public class JavaScriptEslintBasedSensor extends AbstractEslintSensor {
     compilerOptions.put("allowJs", true);
     // to make TypeScript compiler "better infer types"
     compilerOptions.put("noImplicitAny", true);
-    DefaultTsConfigProvider provider = new DefaultTsConfigProvider(tempFolder, JavaScriptFilePredicate::getJavaScriptPredicate, compilerOptions);
-    return provider.tsconfigs(context);
+    if (projectScope != null) {
+      return List.of(projectScope.tsconfig(compilerOptions));
+    } else {
+      DefaultTsConfigProvider provider = new DefaultTsConfigProvider(tempFolder, JavaScriptFilePredicate::getJavaScriptPredicate, compilerOptions);
+      return provider.tsconfigs(context);
+    }
   }
 
   private void runEslintAnalysis(List<String> tsConfigs, List<InputFile> inputFiles) throws IOException {
     ProgressReport progressReport = new ProgressReport("Analysis progress", TimeUnit.SECONDS.toMillis(10));
     boolean success = false;
     try {
+      LOG.info("Files to analyze: {}  [{}]", inputFiles.size(), inputFiles.stream().map(InputFile::toString).collect(Collectors.toList()));
       progressReport.start(inputFiles.size(), inputFiles.iterator().next().absolutePath());
       eslintBridgeServer.initLinter(checks.eslintRules(), environments, globals);
       for (InputFile inputFile : inputFiles) {

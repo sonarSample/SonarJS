@@ -74,6 +74,7 @@ class EslintBasedRulesTest {
       .setProjectKey(projectKey)
       .setSourceEncoding("UTF-8")
       .setSourceDirs(".")
+      .setDebugLogs(true)
       .setProjectDir(projectDir);
 
     OrchestratorStarter.setProfile(projectKey, jsProfile, "js");
@@ -83,6 +84,9 @@ class EslintBasedRulesTest {
     List<Issue> issuesList = getIssueList(projectKey, "javascript:S3923");
     assertThat(issuesList).hasSize(1);
     assertThat(issuesList.get(0).getLine()).isEqualTo(1);
+
+    var s3800 = getIssueList(projectKey, "javascript:S3800");
+    assertThat(s3800).hasSize(1);
   }
 
   @Test

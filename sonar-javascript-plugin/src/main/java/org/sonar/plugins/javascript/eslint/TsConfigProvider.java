@@ -46,6 +46,7 @@ import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.plugins.javascript.JavaScriptFilePredicate;
 import org.sonar.plugins.javascript.JavaScriptPlugin;
+import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileSystem;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -153,30 +154,30 @@ class TsConfigProvider {
 
     @Override
     public List<String> tsconfigs(SensorContext context) throws IOException {
-      if (context.runtime().getProduct() == SonarProduct.SONARLINT) {
-        // we don't support per analysis temporary files in SonarLint see https://jira.sonarsource.com/browse/SLCORE-235
-        LOG.warn("Generating temporary tsconfig is not supported in SonarLint context.");
-        return emptyList();
-      }
-      Iterable<InputFile> inputFiles = context.fileSystem().inputFiles(filePredicateProvider.apply(context.fileSystem()));
-      TsConfig tsConfig = new TsConfig(inputFiles, compilerOptions);
-      File tsconfigFile = writeToJsonFile(tsConfig);
-      LOG.debug("Using generated tsconfig.json file {}", tsconfigFile.getAbsolutePath());
-      return singletonList(tsconfigFile.getAbsolutePath());
+      var inputFiles = context.fileSystem().inputFiles(filePredicateProvider.apply(context.fileSystem()));
+      return tsconfigs(StreamSupport.stream(inputFiles.spliterator(), false));
     }
 
-    private File writeToJsonFile(TsConfig tsConfig) throws IOException {
+    public List<String> tsconfigs(Stream<InputFile> inputFiles) throws IOException {
+      TsConfig tsConfig = new TsConfig(inputFiles, compilerOptions);
+      var tsconfigFile = writeToJsonFile(tsConfig);
+      LOG.debug("Using generated tsconfig.json file {}", tsconfigFile);
+      return singletonList(tsconfigFile.toAbsolutePath().toString());
+    }
+
+    private Path writeToJsonFile(TsConfig tsConfig) throws IOException {
       String json = new Gson().toJson(tsConfig);
-      File tsconfigFile = folder.newFile();
-      Files.write(tsconfigFile.toPath(), json.getBytes(StandardCharsets.UTF_8));
+      Path tsconfigFile = Files.createTempFile("tsconfig-", ".json");
+      Files.write(tsconfigFile, json.getBytes(StandardCharsets.UTF_8));
+      LOG.info("tsconfig: \n{}", json);
       return tsconfigFile;
     }
 
-    private static class TsConfig {
+    static class TsConfig {
       List<String> files;
       Map<String, Object> compilerOptions;
 
-      TsConfig(Iterable<InputFile> inputFiles, Map<String, Object> compilerOptions) {
+      TsConfig(Stream<InputFile> inputFiles, Map<String, Object> compilerOptions) {
         files = new ArrayList<>();
         inputFiles.forEach(f -> files.add(f.absolutePath()));
         this.compilerOptions = compilerOptions;

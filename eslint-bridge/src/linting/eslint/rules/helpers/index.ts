@@ -18,6 +18,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import { ParserServices } from '@typescript-eslint/experimental-utils';
+import { RequiredParserServices } from 'eslint-plugin-sonarjs/lib/utils/parser-services';
+import { debug } from 'helpers';
+
 export * from './ancestor';
 export * from './ast';
 export * from './aws';
@@ -35,4 +39,12 @@ export * from './reaching-definitions';
 export * from './rule-detect-react';
 export * from './type';
 
-export * from 'eslint-plugin-sonarjs/lib/utils/parser-services';
+export function isRequiredParserServices(
+  services: ParserServices | undefined,
+): services is RequiredParserServices {
+  const rps = !!services;
+  debug('isRequiredParserServices ' + rps);
+  return rps;
+}
+
+export { RequiredParserServices } from 'eslint-plugin-sonarjs/lib/utils/parser-services';

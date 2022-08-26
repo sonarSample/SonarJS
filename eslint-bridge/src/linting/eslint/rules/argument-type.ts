@@ -24,6 +24,7 @@ import * as estree from 'estree';
 import { getTypeFromTreeNode, isRequiredParserServices } from './helpers';
 import { TSESTree } from '@typescript-eslint/experimental-utils';
 import ts, { SyntaxKind } from 'typescript';
+import { debug } from 'helpers';
 
 export const rule: Rule.RuleModule = {
   create(context: Rule.RuleContext) {
@@ -92,7 +93,7 @@ export const rule: Rule.RuleModule = {
           callExpression.callee as TSESTree.Node,
         );
         const symbol = tc.getSymbolAtLocation(tsCallExpr);
-
+        debug('Has symbol : ' + !!symbol);
         if (symbol && symbol.declarations && isBuiltInMethod(symbol)) {
           let mismatch: {
             actualType: ts.Type;

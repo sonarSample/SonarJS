@@ -39,6 +39,7 @@ import org.sonar.plugins.javascript.eslint.JavaScriptChecks;
 import org.sonar.plugins.javascript.eslint.JavaScriptEslintBasedSensor;
 import org.sonar.plugins.javascript.eslint.Monitoring;
 import org.sonar.plugins.javascript.eslint.NodeDeprecationWarning;
+import org.sonar.plugins.javascript.eslint.ProjectScope;
 import org.sonar.plugins.javascript.eslint.RulesBundles;
 import org.sonar.plugins.javascript.eslint.TypeScriptChecks;
 import org.sonar.plugins.javascript.eslint.TypeScriptSensor;
@@ -270,6 +271,8 @@ public class JavaScriptPlugin implements Plugin {
           .subCategory("CSS")
           .multiValues(true)
           .build());
+    } else {
+      context.addExtension(ProjectScope.class);
     }
   }
 
