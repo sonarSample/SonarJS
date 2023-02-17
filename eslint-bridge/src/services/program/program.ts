@@ -31,6 +31,8 @@
 import path from 'path';
 import ts from 'typescript';
 import { addTsConfigIfDirectory, debug, toUnixPath } from 'helpers';
+import { buildParserOptions, parsers } from '../../parsing/jsts';
+import * as console from 'console';
 
 /**
  * A cache of created TypeScript's Program instances
@@ -59,12 +61,8 @@ function nextId() {
  * @throws a runtime error if there is no such program
  * @returns the retrieved TypeScript's Program
  */
-export function getProgramById(programId: string): ts.Program {
-  const program = programs.get(programId);
-  if (!program) {
-    throw Error(`Failed to find program ${programId}`);
-  }
-  return program;
+export function getProgramById(programId: string): ts.Program | undefined {
+  return programs.get(programId);
 }
 
 export function createProgramOptions(
@@ -158,6 +156,24 @@ export async function createProgram(tsConfig: string): Promise<{
   missingTsConfig: boolean;
 }> {
   const programOptions = createProgramOptions(tsConfig);
+  programOptions.host = ts.createCompilerHost(programOptions.options, true);
+  programOptions.host.readFile = fileName => {
+    const contents = ts.sys.readFile(fileName);
+    if (contents && fileName.endsWith('.vue')) {
+      const options = buildParserOptions(
+        { fileContent: contents, filePath: fileName, programId: '1', fileType: 'MAIN' },
+        false,
+        parsers.typescript.parser,
+      );
+      options.doNotParse = true;
+      try {
+        parsers.vuejs.parse(contents, options);
+      } catch (e) {
+        if (e.parsedJsTsCode) return e.parsedJsTsCode;
+      }
+    }
+    return contents;
+  };
 
   const program = ts.createProgram(programOptions);
 
