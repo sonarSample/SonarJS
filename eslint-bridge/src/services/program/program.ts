@@ -61,8 +61,12 @@ function nextId() {
  * @throws a runtime error if there is no such program
  * @returns the retrieved TypeScript's Program
  */
-export function getProgramById(programId: string): ts.Program | undefined {
-  return programs.get(programId);
+export function getProgramById(programId: string): ts.Program {
+  const program = programs.get(programId);
+  if (!program) {
+    throw Error(`Failed to find program ${programId}`);
+  }
+  return program;
 }
 
 export function createProgramOptions(
