@@ -31,7 +31,7 @@
 import path from 'path';
 import ts from 'typescript';
 import { addTsConfigIfDirectory, debug, toUnixPath } from 'helpers';
-import { buildParserOptions, parsers } from '../../parsing/jsts';
+import { parsers } from '../../parsing/jsts';
 import * as console from 'console';
 
 /**
@@ -157,20 +157,20 @@ export async function createProgram(tsConfig: string): Promise<{
 }> {
   const programOptions = createProgramOptions(tsConfig);
   programOptions.host = ts.createCompilerHost(programOptions.options, true);
+  const emptySourceCode = parsers.javascript.parse('', { requireConfigFile: false });
   programOptions.host.readFile = fileName => {
     const contents = ts.sys.readFile(fileName);
     if (contents && fileName.endsWith('.vue')) {
-      const options = buildParserOptions(
-        { fileContent: contents, filePath: fileName, programId: '1', fileType: 'MAIN' },
-        false,
-        parsers.typescript.parser,
-      );
-      options.doNotParse = true;
-      try {
-        parsers.vuejs.parse(contents, options);
-      } catch (e) {
-        if (e.parsedJsTsCode) return e.parsedJsTsCode;
-      }
+      const codes: string[] = [];
+      parsers.vuejs.parse(contents, {
+        parser: {
+          parseForESLint: (code: string) => {
+            codes.push(code);
+            return emptySourceCode;
+          },
+        },
+      });
+      return codes.join('');
     }
     return contents;
   };
