@@ -91,9 +91,14 @@ public class TypeScriptSensor extends AbstractEslintSensor {
   protected void analyzeFiles(List<InputFile> inputFiles) throws IOException {
     analysisMode = AnalysisMode.getMode(context, checks.eslintRules());
     eslintBridgeServer.initLinter(checks.eslintRules(), environments, globals, analysisMode);
+    var startTime = System.currentTimeMillis();
     if (shouldAnalyzeWithProgram(inputFiles)) {
+      LOG.info("Analyze with programs");
       analysisWithProgram.analyzeFiles(context, checks, inputFiles);
+      LOG.info("Analysis with programs took {}s", (System.currentTimeMillis() - startTime) / 1000L);
       return;
+    } else {
+      LOG.info("Analyze with projects");
     }
     List<String> tsConfigs = new TsConfigProvider(tempFolder).tsconfigs(context);
     if (tsConfigs.isEmpty()) {
@@ -125,11 +130,12 @@ public class TypeScriptSensor extends AbstractEslintSensor {
       } else {
         progressReport.cancel();
       }
+      LOG.info("Analysis with projects took {}s", (System.currentTimeMillis() - startTime) / 1000L);
     }
   }
 
   private boolean shouldAnalyzeWithProgram(List<InputFile> inputFiles) {
-    return inputFiles.stream().noneMatch(f -> f.filename().endsWith(".vue")) && !contextUtils.isSonarLint();
+    return context.config().getBoolean("sonar.typescript.analysis.program").orElse(inputFiles.stream().noneMatch(f -> f.filename().endsWith(".vue")));
   }
 
   private void analyzeFilesWithTsConfig(List<InputFile> files, TsConfigFile tsConfigFile, ProgressReport progressReport) throws IOException {
