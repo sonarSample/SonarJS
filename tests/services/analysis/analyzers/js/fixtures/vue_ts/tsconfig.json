@@ -17,7 +17,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
-    "baseUrl": ".",
+    "baseUrl": "./",
     "types": [
       "webpack-env"
     ],
@@ -28,5 +28,7 @@
       "scripthost"
     ]
   },
-  "include": ["file.vue"]
+  "include": [
+    "file.vue"
+  ]
 }

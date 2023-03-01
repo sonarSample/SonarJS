@@ -7,5 +7,7 @@
       "string42": ["subfolder"]
     }
   },
-  "include": ["file.ts"]
+  "include": [
+    "file.ts"
+  ]
 }
