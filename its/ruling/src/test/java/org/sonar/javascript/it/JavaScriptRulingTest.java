@@ -155,7 +155,7 @@ class JavaScriptRulingTest {
 
   @AfterAll
   static void afterAll() {
-    orchestrator.stop();
+     orchestrator.stop();
   }
 
   @ParameterizedTest
